@@ -102,9 +102,33 @@ public class ValueIterationAgent extends Agent {
 	 */
 	public void iterate()
 	{
-		/* YOUR CODE HERE */
-		
+		for (int i = 0; i < k; i++) { //loop over the number of iterations
+			
+			for (Game game : valueFunction.keySet()) { //loop over all keysets in the game
+				List <Move> steps = game.getPossibleMoves(); //create a list of all possible moves for the game
+				
+				double v = -9999999; //high negative v value in case q is also negative (later comparison)
+				
+				if(game.isTerminal()) v = 0; //if the game is terminal set v value to 0
+				
+				
+				for (Move move : steps) { //for all possible moves
+					List <TransitionProb> transitions = m.generateTransitions(game, move); //create a list of transitions
+					
+					double q = 0; //set q back to 0 for each move
+					
+					for (TransitionProb transition : transitions) { //transition probability distribution loop over all transitions
+						q += (transition.prob * (transition.outcome.localReward + (discount * valueFunction.get(transition.outcome.sPrime)))); //calculation for the new q value (as on lecture 12)
+					}
+					
+					if (q > v)  v = q; // if q is greater than v, v is now q (FindMax)
+				}
+				
+				valueFunction.replace(game, v); //set the valuefunction to be highest v value
+			}
+		}
 	}
+
 	
 	/**This method should be run AFTER the train method to extract a policy according to {@link ValueIterationAgent#valueFunction}
 	 * You will need to do a single step of expectimax from each game (state) key in {@link ValueIterationAgent#valueFunction} 
@@ -114,9 +138,31 @@ public class ValueIterationAgent extends Agent {
 	 */
 	public Policy extractPolicy()
 	{
-		/* YOUR CODE HERE */
-		return null;
-	}
+		Policy policy = new Policy(); //create a new policy
+		
+		for (Game state : valueFunction.keySet()) { //loop over all keysets in the game
+			List <Move> steps = state.getPossibleMoves(); //create a list of all possible moves for the game
+			double v = -9999999;  //high negative v value in case q is also negative (later comparison)
+			
+			if(state.isTerminal()) v = 0; //if the game is terminal set v value to 0
+			
+			for (Move move : steps) { //for all possible moves
+				List <TransitionProb> transitions = m.generateTransitions(state, move); //create a list of transitions
+				
+				double q = 0; //set q back to 0 for each move
+				
+				for (TransitionProb transition : transitions) { //transition probability distribution loop over all transitions
+					q += (transition.prob * (transition.outcome.localReward + (discount * valueFunction.get(transition.outcome.sPrime)))); //calculation for the new q value (as on lecture 12)
+				}
+				
+				if (q > v) {   // if q is greater than v
+					v = q; //v is now q
+					policy.policy.put(state, move); //update policy with new move
+				}
+	 }
+   }
+		return policy;
+}
 	
 	/**
 	 * This method solves the mdp using your implementation of {@link ValueIterationAgent#extractPolicy} and
